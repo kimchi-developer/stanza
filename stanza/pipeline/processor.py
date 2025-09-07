@@ -57,6 +57,7 @@ class Processor(ABC):
         self._config = config
         # pipeline building this processor (presently processors are only meant to exist in one pipeline)
         self._pipeline = pipeline
+        self.device = device
         self._set_up_variants(config, device)
         # run set up process
         # set up what annotations are required based on config
