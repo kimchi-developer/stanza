@@ -6,6 +6,7 @@ import io
 
 import torch
 
+from stanza.models.common import utils
 from stanza.models.mwt.data import DataLoader
 from stanza.models.mwt.trainer import Trainer
 from stanza.pipeline._constants import *
@@ -35,7 +36,7 @@ class MWTProcessor(UDProcessor):
             if self.config['dict_only']:
                 preds = self.trainer.predict_dict(expansions)
             else:
-                with torch.no_grad():
+                with torch.inference_mode():
                     preds = []
                     for i, b in enumerate(batch.to_loader()):
                         preds += self.trainer.predict(b, never_decode_unk=True, vocab=batch.vocab)

@@ -5,6 +5,7 @@ Processor for performing dependency parsing
 import torch
 
 from stanza.models.common import doc
+from stanza.models.common import utils
 from stanza.models.common.utils import unsort
 from stanza.models.common.vocab import VOCAB_PREFIX
 from stanza.models.depparse.data import DataLoader
@@ -59,10 +60,17 @@ class DepparseProcessor(UDProcessor):
             batch = DataLoader(document, self.config['batch_size'], self.config, self.pretrain, vocab=self.vocab, evaluation=True,
                                sort_during_eval=self.config.get('sort_during_eval', True),
                                min_length_to_batch_separately=self.config.get('min_length_to_batch_separately', DEFAULT_SEPARATE_BATCH))
-            with torch.no_grad():
-                preds = []
-                for i, b in enumerate(batch):
-                    preds += self.trainer.predict(b)
+            autocast_settings = utils.get_autocast_settings(self.device)
+            if autocast_settings is not None:
+                with torch.inference_mode(), torch.amp.autocast(**autocast_settings):
+                    preds = []
+                    for i, b in enumerate(batch):
+                        preds += self.trainer.predict(b)
+            else:
+                with torch.inference_mode():
+                    preds = []
+                    for i, b in enumerate(batch):
+                        preds += self.trainer.predict(b)
             if batch.data_orig_idx is not None:
                 preds = unsort(preds, batch.data_orig_idx)
             batch.doc.set((doc.HEAD, doc.DEPREL), [y for x in preds for y in x])

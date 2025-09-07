@@ -41,7 +41,7 @@ if __name__ == "__main__":
         input_data = json.loads(text)
     docs = [model.build_doc(doc) for doc in input_data]
 
-    with torch.no_grad():
+    with torch.inference_mode():
         for doc in tqdm(docs, unit="docs"):
             result = model.run(doc)
             doc["span_clusters"] = result.span_clusters

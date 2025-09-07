@@ -311,7 +311,7 @@ class Seq2SeqModel(nn.Module):
             edit_logits = None
 
         # (2) set up beam
-        with torch.no_grad():
+        with torch.inference_mode():
             h_in = h_in.data.repeat(beam_size, 1, 1) # repeat data for beam search
             src_mask = src_mask.repeat(beam_size, 1)
             # repeat decoder hidden states

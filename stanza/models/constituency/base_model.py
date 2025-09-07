@@ -352,8 +352,14 @@ class BaseModel(ABC):
         no_grad() is so that gradients aren't kept, which makes the model
         run faster and use less memory at inference time
         """
-        with torch.no_grad():
-            return self.parse_sentences(data_iterator, build_batch_fn, batch_size, transition_choice, keep_state, keep_constituents, keep_scores)
+        device = next(self.parameters()).device
+        autocast_settings = utils.get_autocast_settings(str(device))
+        if autocast_settings is not None:
+            with torch.inference_mode(), torch.amp.autocast(**autocast_settings):
+                return self.parse_sentences(data_iterator, build_batch_fn, batch_size, transition_choice, keep_state, keep_constituents, keep_scores)
+        else:
+            with torch.inference_mode():
+                return self.parse_sentences(data_iterator, build_batch_fn, batch_size, transition_choice, keep_state, keep_constituents, keep_scores)
 
     def analyze_trees(self, trees, batch_size=None, keep_state=True, keep_constituents=True, keep_scores=True):
         """

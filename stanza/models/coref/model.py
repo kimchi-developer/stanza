@@ -111,7 +111,7 @@ class CorefModel:  # pylint: disable=too-many-instance-attributes
 
     # ========================================================== Public methods
 
-    @torch.no_grad()
+    @torch.inference_mode()
     def evaluate(self,
                  data_split: str = "dev",
                  word_level_conll: bool = False, 

@@ -100,7 +100,7 @@ class TokenizeProcessor(UDProcessor):
         # set up batches
         batches = TokenizationDataset(self.config, input_text=raw_text, vocab=self.vocab, evaluation=True, dictionary=self.trainer.dictionary)
         # get dict data
-        with torch.no_grad():
+        with torch.inference_mode():
             _, _, _, document = output_predictions(None, self.trainer, batches, self.vocab, None,
                                                    max_seq_len,
                                                    orig_text=raw_text,

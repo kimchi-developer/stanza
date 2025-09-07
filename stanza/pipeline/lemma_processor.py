@@ -7,6 +7,7 @@ from itertools import compress
 import torch
 
 from stanza.models.common import doc
+from stanza.models.common import utils
 from stanza.models.lemma.data import DataLoader
 from stanza.models.lemma.trainer import Trainer
 from stanza.pipeline._constants import *
@@ -87,7 +88,7 @@ class LemmaProcessor(UDProcessor):
             else:
                 seq2seq_batch = batch
 
-            with torch.no_grad():
+            with torch.inference_mode():
                 preds = []
                 edits = []
                 for i, b in enumerate(seq2seq_batch):

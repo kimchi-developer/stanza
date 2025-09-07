@@ -156,7 +156,7 @@ class CharacterLanguageModel(nn.Module):
         return output, hidden, decoded
 
     def get_representation(self, chars, charoffsets, charlens, char_orig_idx):
-        with torch.no_grad():
+        with torch.inference_mode():
             output, _, _ = self.forward(chars, charlens)
             res = [output[i, offsets] for i, offsets in enumerate(charoffsets)]
             res = unsort(res, char_orig_idx)
@@ -174,7 +174,7 @@ class CharacterLanguageModel(nn.Module):
         chars = [x[0] for x in all_data]
         char_lens = [x[1] for x in all_data]
         char_tensor = get_long_tensor(chars, len(chars), pad_id=vocab.unit2id(CHARLM_END)).to(device=device)
-        with torch.no_grad():
+        with torch.inference_mode():
             output, _, _ = self.forward(char_tensor, char_lens)
             output = [x[:y, :] for x, y in zip(output, char_lens)]
             output = unsort(output, [x[2] for x in all_data])
@@ -218,7 +218,7 @@ class CharacterLanguageModel(nn.Module):
         # TODO: can this be faster?
         chars = get_long_tensor(chars, len(all_data), pad_id=vocab.unit2id(CHARLM_END)).to(device=device)
 
-        with torch.no_grad():
+        with torch.inference_mode():
             output, _, _ = self.forward(chars, char_lens)
             res = [output[i, offsets] for i, offsets in enumerate(char_offsets)]
             res = unsort(res, orig_idx)

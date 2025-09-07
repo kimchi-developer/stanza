@@ -155,7 +155,7 @@ def evaluate_epoch(args, vocab, data, model, criterion):
         assert len(data) == 1, 'Only support single dev/test file'
         data = data[0]
     batches = batchify(data, args['batch_size'], device)
-    with torch.no_grad():
+    with torch.inference_mode():
         for i in range(0, batches.size(1) - 1, args['bptt_size']):
             data, target = get_batch(batches, i, args['bptt_size'])
             lens = [data.size(1) for i in range(data.size(0))]

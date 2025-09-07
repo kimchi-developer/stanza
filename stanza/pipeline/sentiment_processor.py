@@ -71,7 +71,7 @@ class SentimentProcessor(UDProcessor):
 
     def process(self, document):
         sentences = self._model.extract_sentences(document)
-        with torch.no_grad():
+        with torch.inference_mode():
             labels = self._model.label_sentences(sentences, batch_size=self._batch_size)
         # TODO: allow a classifier processor for any attribute, not just sentiment
         document.set(SENTIMENT, labels, to_sentence=True)

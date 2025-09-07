@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(for file in /Users/g/PycharmProjects/stanza/stanza/pipeline/mwt_processor.py /Users/g/PycharmProjects/stanza/stanza/pipeline/sentiment_processor.py /Users/g/PycharmProjects/stanza/stanza/pipeline/tokenize_processor.py)",
+      "Bash(do)",
+      "Bash(if ! grep -q \"from stanza.models.common import utils\" \"$file\")",
+      "Bash(then)",
+      "Bash(sed -i '' '/from stanza.models.common import doc/a\\\nfrom stanza.models.common import utils' \"$file\")",
+      "Bash(fi)",
+      "Bash(done)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

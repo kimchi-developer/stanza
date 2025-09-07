@@ -439,10 +439,17 @@ def evaluate_trainer(args, trainer, pretrain):
         logger.info("Start evaluation...")
         preds = []
         indices = []
-        with torch.no_grad():
-            for b in dev_batch:
-                preds += trainer.predict(b)
-                indices.extend(b[-1])
+        autocast_settings = utils.get_autocast_settings(args.get('device', 'cpu'))
+        if autocast_settings is not None:
+            with torch.inference_mode(), torch.amp.autocast(**autocast_settings):
+                for b in dev_batch:
+                    preds += trainer.predict(b)
+                    indices.extend(b[-1])
+        else:
+            with torch.inference_mode():
+                for b in dev_batch:
+                    preds += trainer.predict(b)
+                    indices.extend(b[-1])
     else:
         # skip eval if dev data does not exist
         preds = []

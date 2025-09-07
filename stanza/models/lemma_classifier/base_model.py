@@ -59,7 +59,7 @@ class LemmaClassifier(ABC, nn.Module):
 
     def predict(self, position_indices: torch.Tensor, sentences: List[List[str]], upos_tags: List[List[str]]=[]) -> torch.Tensor:
         upos_tags = self.convert_tags(upos_tags)
-        with torch.no_grad():
+        with torch.inference_mode():
             logits = self.forward(position_indices, sentences, upos_tags)  # should be size (batch_size, output_size)
             predicted_class = torch.argmax(logits, dim=1)  # should be size (batch_size, 1)
         predicted_class = [self.label_encoder[x.item()] for x in predicted_class]

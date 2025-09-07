@@ -360,7 +360,7 @@ class Ensemble(nn.Module):
         return treebank
 
     def parse_sentences_no_grad(self, data_iterator, build_batch_fn, batch_size, transition_choice, keep_state=False, keep_constituents=False, keep_scores=False):
-        with torch.no_grad():
+        with torch.inference_mode():
             return self.parse_sentences(data_iterator, build_batch_fn, batch_size, transition_choice, keep_state, keep_constituents, keep_scores)
 
 class EnsembleTrainer(BaseTrainer):

@@ -5,6 +5,7 @@ Processor for performing part-of-speech tagging
 import torch
 
 from stanza.models.common import doc
+from stanza.models.common import utils
 from stanza.models.common.utils import unsort
 from stanza.models.common.vocab import VOCAB_PREFIX, CompositeVocab
 from stanza.models.pos.data import Dataset
@@ -77,12 +78,21 @@ class POSProcessor(UDProcessor):
         preds = []
 
         idx = []
-        with torch.no_grad():
-            if self._tqdm:
-                batch = tqdm(batch)
-            for i, b in enumerate(batch):
-                idx.extend(b[-1])
-                preds += self.trainer.predict(b)
+        autocast_settings = utils.get_autocast_settings(self.device)
+        if autocast_settings is not None:
+            with torch.inference_mode(), torch.amp.autocast(**autocast_settings):
+                if self._tqdm:
+                    batch = tqdm(batch)
+                for i, b in enumerate(batch):
+                    idx.extend(b[-1])
+                    preds += self.trainer.predict(b)
+        else:
+            with torch.inference_mode():
+                if self._tqdm:
+                    batch = tqdm(batch)
+                for i, b in enumerate(batch):
+                    idx.extend(b[-1])
+                    preds += self.trainer.predict(b)
 
         preds = unsort(preds, idx)
         dataset.doc.set([doc.UPOS, doc.XPOS, doc.FEATS], [y for x in preds for y in x])

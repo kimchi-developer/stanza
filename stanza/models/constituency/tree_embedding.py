@@ -54,7 +54,7 @@ class TreeEmbedding(nn.Module):
         if self.config["backprop"]:
             states = self.constituency_parser.analyze_trees(inputs)
         else:
-            with torch.no_grad():
+            with torch.inference_mode():
                 states = self.constituency_parser.analyze_trees(inputs)
 
         constituent_lists = [x.constituents for x in states]

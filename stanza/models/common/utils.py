@@ -545,7 +545,38 @@ def default_device():
     """
     if torch.cuda.is_available():
         return 'cuda'
+    elif torch.backends.mps.is_available():
+        return 'mps'
     return 'cpu'
+
+def get_autocast_settings(device: str):
+    """
+    Return kwargs for torch.autocast(...) depending on device.
+    - MPS: use native 'mps' autocast if available.
+      * dtype: bf16 on macOS 14+, else fp16
+    - CUDA: bf16 기본(필요시 fp16로 변경)
+    - CPU: bf16
+    """
+    if device == 'cuda':
+        return {'device_type': 'cuda', 'dtype': torch.bfloat16}
+    elif device == 'mps':
+        # mps autocast 지원 여부 확인 (파이토치 버전 차이 대응)
+        is_mps_autocast = getattr(
+            torch.amp.autocast_mode, "is_autocast_available", lambda *_: False
+        )('mps')
+
+        # macOS 14+ 에서만 bf16
+        use_bf16 = hasattr(torch.backends, "mps") and torch.backends.mps.is_macos_or_newer(14, 0)
+        dtype = torch.bfloat16 if use_bf16 else torch.float16
+
+        if is_mps_autocast:
+            return {'device_type': 'mps', 'dtype': dtype}
+        else:
+            # ⚠️ CPU autocast는 MPS 연산에 영향이 없습니다.
+            # 구버전이라면 autocast를 끄고(또는 입력/가중치 half()로) 처리하거나 PyTorch 업그레이드 권장.
+            return None  # 호출부에서 autocast 없이 실행하도록 처리
+    else:
+        return {'device_type': 'cpu', 'dtype': torch.bfloat16}
 
 def add_device_args(parser):
     """

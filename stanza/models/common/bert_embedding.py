@@ -154,7 +154,7 @@ def extract_bart_word_embeddings(model_name, tokenizer, model, data, device, kee
         attention_mask = attention_mask[start_sentence:end_sentence]
 
         if detach:
-            with torch.no_grad():
+            with torch.inference_mode():
                 features = model(input_ids, attention_mask=attention_mask, output_hidden_states=True)
                 features = cloned_feature(features.decoder_hidden_states, num_layers, detach)
         else:
@@ -218,7 +218,7 @@ def extract_phobert_embeddings(model_name, tokenizer, model, data, device, keep_
         for sent_idx, sent in enumerate(tokenized_sents[start_sentence:end_sentence]):
             attention_mask[sent_idx, :len(sent)] = 1
         if detach:
-            with torch.no_grad():
+            with torch.inference_mode():
                 # TODO: is the clone().detach() necessary?
                 feature = model(padded_input.clone().detach().to(device), attention_mask=attention_mask, output_hidden_states=True)
                 features += cloned_feature(feature.hidden_states, num_layers, detach)
@@ -333,7 +333,7 @@ def extract_xlnet_embeddings(model_name, tokenizer, model, data, device, keep_en
             if len(input_row) < max_len:
                 input_row.extend([tokenizer.pad_token_id] * (max_len - len(input_row)))
         if detach:
-            with torch.no_grad():
+            with torch.inference_mode():
                 id_tensor = torch.tensor(input_ids, device=device)
                 feature = model(id_tensor, attention_mask=attention_mask, output_hidden_states=True)
                 # feature[2] is the same for bert, but it didn't work for
@@ -459,7 +459,7 @@ def extract_base_embeddings(model_name, tokenizer, model, data, device, keep_end
         attention_tensor = torch.tensor(tokenized['attention_mask'][128*i:128*i+128], device=device)
         id_tensor = torch.tensor(tokenized['input_ids'][128*i:128*i+128], device=device)
         if detach:
-            with torch.no_grad():
+            with torch.inference_mode():
                 features += build_cloned_features(model, tokenizer, attention_tensor, id_tensor, num_layers, detach, device)
         else:
             features += build_cloned_features(model, tokenizer, attention_tensor, id_tensor, num_layers, detach, device)

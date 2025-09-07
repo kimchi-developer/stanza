@@ -8,6 +8,7 @@ import logging
 
 from stanza.models.common import doc
 from stanza.models.common.exceptions import ForwardCharlmNotFoundError, BackwardCharlmNotFoundError
+from stanza.models.common import utils
 from stanza.models.common.utils import unsort
 from stanza.models.ner.data import DataLoader
 from stanza.models.ner.trainer import Trainer
@@ -104,15 +105,27 @@ class NERProcessor(UDProcessor):
         self.trainers = None
 
     def process(self, document):
-        with torch.no_grad():
-            all_preds = []
-            for trainer, config in zip(self.trainers, self.configs):
-                # set up a eval-only data loader and skip tag preprocessing
-                batch = DataLoader(document, config['batch_size'], config, vocab=trainer.vocab, evaluation=True, preprocess_tags=False, bert_tokenizer=trainer.model.bert_tokenizer)
-                preds = []
-                for i, b in enumerate(batch):
-                    preds += trainer.predict(b)
-                all_preds.append(preds)
+        autocast_settings = utils.get_autocast_settings(self.device)
+        if autocast_settings is not None:
+            with torch.inference_mode(), torch.amp.autocast(**autocast_settings):
+                all_preds = []
+                for trainer, config in zip(self.trainers, self.configs):
+                    # set up a eval-only data loader and skip tag preprocessing
+                    batch = DataLoader(document, config['batch_size'], config, vocab=trainer.vocab, evaluation=True, preprocess_tags=False, bert_tokenizer=trainer.model.bert_tokenizer)
+                    preds = []
+                    for i, b in enumerate(batch):
+                        preds += trainer.predict(b)
+                    all_preds.append(preds)
+        else:
+            with torch.inference_mode():
+                all_preds = []
+                for trainer, config in zip(self.trainers, self.configs):
+                    # set up a eval-only data loader and skip tag preprocessing
+                    batch = DataLoader(document, config['batch_size'], config, vocab=trainer.vocab, evaluation=True, preprocess_tags=False, bert_tokenizer=trainer.model.bert_tokenizer)
+                    preds = []
+                    for i, b in enumerate(batch):
+                        preds += trainer.predict(b)
+                    all_preds.append(preds)
         # for each sentence, gather a list of predictions
         # merge those predictions into a single list
         # earlier models will have precedence
