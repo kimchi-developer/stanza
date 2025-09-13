@@ -201,7 +201,7 @@ class TokenizationDataset:
 
         units = torch.full((len(ounits), pad_len), padid, dtype=torch.int64)
         labels = torch.full((len(ounits), pad_len), -1, dtype=torch.int32)
-        features = torch.zeros((len(ounits), pad_len, feat_size), dtype=torch.float32)
+        features = torch.zeros((len(ounits), pad_len, feat_size), dtype=torch.get_default_dtype())
         raw_units = []
 
         for i in range(len(ounits)):
@@ -419,7 +419,7 @@ class SortedDataset(Dataset):
 
         units = torch.full((len(samples), pad_len), padid, dtype=torch.int64)
         labels = torch.full((len(samples), pad_len), -1, dtype=torch.int32)
-        features = torch.zeros((len(samples), pad_len, feat_size), dtype=torch.float32)
+        features = torch.zeros((len(samples), pad_len, feat_size), dtype=torch.get_default_dtype())
         raw_units = []
         for i, sample in enumerate(samples):
             u_, l_, f_, r_ = sample[0]
@@ -429,4 +429,3 @@ class SortedDataset(Dataset):
             raw_units.append(r_ + ['<PAD>'] * (pad_len - len(r_)))
 
         return units, labels, features, raw_units
-

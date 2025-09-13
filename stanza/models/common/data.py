@@ -35,9 +35,9 @@ def get_float_tensor(features_list, batch_size):
         return None
     seq_len = max(len(x) for x in features_list)
     feature_len = len(features_list[0][0])
-    features = torch.FloatTensor(batch_size, seq_len, feature_len).zero_()
+    features = torch.zeros(batch_size, seq_len, feature_len, dtype=torch.get_default_dtype())
     for i,f in enumerate(features_list):
-        features[i,:len(f),:] = torch.FloatTensor(f)
+        features[i,:len(f),:] = torch.tensor(f, dtype=torch.get_default_dtype())
     return features
 
 def sort_all(batch, lens):

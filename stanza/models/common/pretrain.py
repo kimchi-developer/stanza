@@ -165,9 +165,9 @@ class Pretrain:
         rows = len(lines)
         cols = len(lines[0]) - 1
 
-        emb = torch.zeros((rows + len(VOCAB_PREFIX), cols), dtype=torch.float32)
+        emb = torch.zeros((rows + len(VOCAB_PREFIX), cols), dtype=torch.get_default_dtype())
         for i, line in enumerate(lines):
-            emb[i+len(VOCAB_PREFIX)] = torch.tensor([float(x) for x in line[-cols:]], dtype=torch.float32)
+            emb[i+len(VOCAB_PREFIX)] = torch.tensor([float(x) for x in line[-cols:]], dtype=torch.get_default_dtype())
         words = [line[0].replace(' ', '\xa0') for line in lines]
         return words, emb
 
@@ -219,11 +219,11 @@ class Pretrain:
             # another failure case: all words have spaces in them
             cols = min(len(x) for x in lines) - 1
         rows = len(lines)
-        emb = torch.zeros((rows + len(VOCAB_PREFIX), cols), dtype=torch.float32)
+        emb = torch.zeros((rows + len(VOCAB_PREFIX), cols), dtype=torch.get_default_dtype())
         if unk_line is not None:
-            emb[UNK_ID] = torch.tensor([float(x) for x in unk_line[-cols:]], dtype=torch.float32)
+            emb[UNK_ID] = torch.tensor([float(x) for x in unk_line[-cols:]], dtype=torch.get_default_dtype())
         for i, line in enumerate(lines):
-            emb[i+len(VOCAB_PREFIX)] = torch.tensor([float(x) for x in line[-cols:]], dtype=torch.float32)
+            emb[i+len(VOCAB_PREFIX)] = torch.tensor([float(x) for x in line[-cols:]], dtype=torch.get_default_dtype())
 
         # if there were word pieces separated with spaces, rejoin them with nbsp instead
         # this way, the normalize_unit method in vocab.py can find the word at test time
@@ -286,4 +286,3 @@ if __name__ == '__main__':
     # 2nd load: load saved pt file
     pretrain = Pretrain('test.pt', 'test.txt')
     print(pretrain.emb)
-
