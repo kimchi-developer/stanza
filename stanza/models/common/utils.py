@@ -576,7 +576,7 @@ def get_autocast_settings(device: str):
             # 구버전이라면 autocast를 끄고(또는 입력/가중치 half()로) 처리하거나 PyTorch 업그레이드 권장.
             return None  # 호출부에서 autocast 없이 실행하도록 처리
     else:
-        return {'device_type': 'cpu', 'dtype': torch.bfloat16}
+        return {'device_type': 'cpu', 'dtype': torch.float32}
 
 def add_device_args(parser):
     """
