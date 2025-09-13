@@ -551,32 +551,54 @@ def default_device():
 
 def get_autocast_settings(device: str):
     """
-    Return kwargs for torch.autocast(...) depending on device.
-    - MPS: use native 'mps' autocast if available.
-      * dtype: bf16 on macOS 14+, else fp16
-    - CUDA: bf16 기본(필요시 fp16로 변경)
-    - CPU: bf16
+    Return kwargs for torch.amp.autocast(...) depending on device.
+
+    - CUDA: prefer bf16 when supported, otherwise fp16.
+    - MPS: use native 'mps' autocast; prefer bf16 on macOS 14+ else fp16.
+    - CPU: disable autocast (return None) to avoid no-op/overhead.
     """
-    if device == 'cuda':
-        return {'device_type': 'cuda', 'dtype': torch.bfloat16}
-    elif device == 'mps':
-        # mps autocast 지원 여부 확인 (파이토치 버전 차이 대응)
-        is_mps_autocast = getattr(
-            torch.amp.autocast_mode, "is_autocast_available", lambda *_: False
-        )('mps')
+    try:
+        dev = str(device)
+    except Exception:
+        dev = 'cpu'
 
-        # macOS 14+ 에서만 bf16
-        use_bf16 = hasattr(torch.backends, "mps") and torch.backends.mps.is_macos_or_newer(14, 0)
-        dtype = torch.bfloat16 if use_bf16 else torch.float16
+    if dev == 'cuda':
+        # bf16 available on Ampere+; fall back to fp16 otherwise
+        bf16_ok = getattr(torch.cuda, 'is_bf16_supported', lambda: False)()
+        dtype = torch.bfloat16 if bf16_ok else torch.float16
+        return {'device_type': 'cuda', 'dtype': dtype}
 
-        if is_mps_autocast:
-            return {'device_type': 'mps', 'dtype': dtype}
+    if dev == 'mps':
+        # Check if MPS backend exists and is available
+        has_mps = hasattr(torch.backends, 'mps') and getattr(torch.backends.mps, 'is_available', lambda: False)()
+
+        if not has_mps:
+            return None
+
+        # Determine bf16 availability on macOS 14+
+        use_bf16 = False
+        # Prefer torch-provided helper if present
+        if hasattr(torch.backends, 'mps') and hasattr(torch.backends.mps, 'is_macos_or_newer'):
+            try:
+                use_bf16 = torch.backends.mps.is_macos_or_newer(14, 0)
+            except Exception:
+                use_bf16 = False
         else:
-            # ⚠️ CPU autocast는 MPS 연산에 영향이 없습니다.
-            # 구버전이라면 autocast를 끄고(또는 입력/가중치 half()로) 처리하거나 PyTorch 업그레이드 권장.
-            return None  # 호출부에서 autocast 없이 실행하도록 처리
-    else:
-        return {'device_type': 'cpu', 'dtype': torch.float32}
+            # Fallback to platform check
+            try:
+                import platform
+                ver = platform.mac_ver()[0]
+                if ver:
+                    major = int(ver.split('.')[0])
+                    use_bf16 = major >= 14
+            except Exception:
+                use_bf16 = False
+
+        dtype = torch.bfloat16 if use_bf16 else torch.float16
+        return {'device_type': 'mps', 'dtype': dtype}
+
+    # CPU: disable autocast to avoid no-op context overhead
+    return None
 
 def add_device_args(parser):
     """
